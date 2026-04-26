@@ -7,31 +7,34 @@
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:#0d0d0d;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Oswald','Helvetica Neue',Arial,sans-serif}
+html,body{background:transparent;width:100%;height:100%}
+body{display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Oswald','Helvetica Neue',Arial,sans-serif}
+
+.scale-wrap{display:flex;justify-content:center;align-items:center;transform-origin:center center}
 
 .flip-display{display:flex;gap:10px;align-items:flex-start}
 
 .unit-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}
-.unit-lbl{font-size:9px;letter-spacing:5px;text-transform:uppercase;font-weight:700;color:#444;font-family:'Helvetica Neue',Arial,sans-serif}
+.unit-lbl{font-size:9px;letter-spacing:5px;text-transform:uppercase;font-weight:700;color:#999;font-family:'Helvetica Neue',Arial,sans-serif}
 
-.fc{position:relative;border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,0.8)}
+.fc{position:relative;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,0.25)}
 .fc-upper,.fc-lower{position:absolute;left:0;width:100%;height:50%;overflow:hidden}
-.fc-upper{top:0;border-radius:6px 6px 0 0;background:#2e2e2e}
-.fc-lower{bottom:0;border-radius:0 0 6px 6px;background:#222}
+.fc-upper{top:0;border-radius:6px 6px 0 0;background:#111}
+.fc-lower{bottom:0;border-radius:0 0 6px 6px;background:#000}
 
 .ht{position:absolute;left:0;width:100%;height:200%;display:flex;align-items:center;justify-content:center}
 .fc-upper .ht{top:0}
 .fc-lower .ht{bottom:0}
 
-.cv{color:#f0f0f0;line-height:1;user-select:none;font-weight:700}
+.cv{color:#fff;line-height:1;user-select:none;font-weight:700}
 
-.fc-div{position:absolute;top:50%;left:0;width:100%;height:2px;background:#0d0d0d;z-index:30;transform:translateY(-50%)}
-.fc-lower::after{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:rgba(0,0,0,0.45);z-index:2}
+.fc-div{position:absolute;top:50%;left:0;width:100%;height:2px;background:rgba(255,255,255,0.08);z-index:30;transform:translateY(-50%)}
+.fc-lower::after{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:rgba(0,0,0,0.4);z-index:2}
 
 /* Animated pieces */
-.flap{position:absolute;top:0;left:0;width:100%;height:50%;overflow:hidden;border-radius:6px 6px 0 0;background:#2e2e2e;z-index:20;transform-origin:bottom center}
+.flap{position:absolute;top:0;left:0;width:100%;height:50%;overflow:hidden;border-radius:6px 6px 0 0;background:#111;z-index:20;transform-origin:bottom center}
 .flap .ht{top:0}
-.fold{position:absolute;bottom:0;left:0;width:100%;height:50%;overflow:hidden;border-radius:0 0 6px 6px;background:#222;z-index:19;transform-origin:top center;transform:perspective(300px) rotateX(90deg)}
+.fold{position:absolute;bottom:0;left:0;width:100%;height:50%;overflow:hidden;border-radius:0 0 6px 6px;background:#000;z-index:19;transform-origin:top center;transform:perspective(300px) rotateX(90deg)}
 .fold .ht{bottom:0}
 
 .flap.go{animation:flapDown 0.28s ease-in forwards}
@@ -49,7 +52,9 @@ body{background:#0d0d0d;display:flex;justify-content:center;align-items:center;m
 </head>
 <body>
 
-<div class="flip-display" id="flip-display"></div>
+<div class="scale-wrap" id="scale-wrap">
+  <div class="flip-display" id="flip-display"></div>
+</div>
 
 <script>
 const DAYS   = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
@@ -90,6 +95,16 @@ const display = document.getElementById('flip-display');
 display.appendChild(makeCard('Day',   140, 160, 46));
 display.appendChild(makeCard('Date',  120, 160, 68));
 display.appendChild(makeCard('Month', 140, 160, 46));
+
+// Responsive scaling
+const NATURAL_W = 440; // natural width of the full display
+function scaleDisplay() {
+  const available = window.innerWidth;
+  const scale = Math.min(1, available / NATURAL_W);
+  document.getElementById('scale-wrap').style.transform = `scale(${scale})`;
+}
+window.addEventListener('resize', scaleDisplay);
+scaleDisplay();
 
 function setCard(id, val) {
   document.querySelectorAll('#fc-' + id + ' .cv').forEach(el => el.textContent = val);
