@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flip Date Display</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0d0d;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Oswald','Helvetica Neue',Arial,sans-serif}
+
+.flip-display{display:flex;gap:10px;align-items:flex-start}
+
+.unit-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+.unit-lbl{font-size:9px;letter-spacing:5px;text-transform:uppercase;font-weight:700;color:#444;font-family:'Helvetica Neue',Arial,sans-serif}
+
+.fc{position:relative;border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,0.8)}
+.fc-upper,.fc-lower{position:absolute;left:0;width:100%;height:50%;overflow:hidden}
+.fc-upper{top:0;border-radius:6px 6px 0 0;background:#2e2e2e}
+.fc-lower{bottom:0;border-radius:0 0 6px 6px;background:#222}
+
+.ht{position:absolute;left:0;width:100%;height:200%;display:flex;align-items:center;justify-content:center}
+.fc-upper .ht{top:0}
+.fc-lower .ht{bottom:0}
+
+.cv{color:#f0f0f0;line-height:1;user-select:none;font-weight:700}
+
+.fc-div{position:absolute;top:50%;left:0;width:100%;height:2px;background:#0d0d0d;z-index:30;transform:translateY(-50%)}
+.fc-lower::after{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:rgba(0,0,0,0.45);z-index:2}
+
+/* Animated pieces */
+.flap{position:absolute;top:0;left:0;width:100%;height:50%;overflow:hidden;border-radius:6px 6px 0 0;background:#2e2e2e;z-index:20;transform-origin:bottom center}
+.flap .ht{top:0}
+.fold{position:absolute;bottom:0;left:0;width:100%;height:50%;overflow:hidden;border-radius:0 0 6px 6px;background:#222;z-index:19;transform-origin:top center;transform:perspective(300px) rotateX(90deg)}
+.fold .ht{bottom:0}
+
+.flap.go{animation:flapDown 0.28s ease-in forwards}
+.fold.go{animation:foldUp 0.28s ease-out 0.22s forwards}
+
+@keyframes flapDown{
+  from{transform:perspective(300px) rotateX(0deg)}
+  to{transform:perspective(300px) rotateX(-90deg)}
+}
+@keyframes foldUp{
+  from{transform:perspective(300px) rotateX(90deg)}
+  to{transform:perspective(300px) rotateX(0deg)}
+}
+</style>
+</head>
+<body>
+
+<div class="flip-display" id="flip-display"></div>
+
+<script>
+const DAYS   = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+function dateParts(d) {
+  return {
+    day:   DAYS[d.getDay()],
+    date:  String(d.getDate()).padStart(2, '0'),
+    month: MONTHS[d.getMonth()]
+  };
+}
+
+function makeCard(label, width, height, fontSize) {
+  const wrap = document.createElement('div');
+  wrap.className = 'unit-wrap';
+
+  const lbl = document.createElement('div');
+  lbl.className = 'unit-lbl';
+  lbl.textContent = label;
+
+  const fc = document.createElement('div');
+  fc.className = 'fc';
+  fc.id = 'fc-' + label.toLowerCase();
+  fc.style.width  = width  + 'px';
+  fc.style.height = height + 'px';
+  fc.innerHTML = `
+    <div class="fc-upper"><div class="ht"><span class="cv" style="font-size:${fontSize}px"></span></div></div>
+    <div class="fc-lower"><div class="ht"><span class="cv" style="font-size:${fontSize}px"></span></div></div>
+    <div class="fc-div"></div>`;
+
+  wrap.appendChild(lbl);
+  wrap.appendChild(fc);
+  return wrap;
+}
+
+const display = document.getElementById('flip-display');
+display.appendChild(makeCard('Day',   140, 160, 46));
+display.appendChild(makeCard('Date',  120, 160, 68));
+display.appendChild(makeCard('Month', 140, 160, 46));
+
+function setCard(id, val) {
+  document.querySelectorAll('#fc-' + id + ' .cv').forEach(el => el.textContent = val);
+}
+
+function flip(id, newVal, fs) {
+  const card = document.getElementById('fc-' + id);
+  const cur  = card.querySelector('.fc-upper .cv').textContent;
+  if (cur === newVal) return;
+
+  const flap = document.createElement('div');
+  flap.className = 'flap';
+  flap.innerHTML = `<div class="ht"><span class="cv" style="font-size:${fs}px">${cur}</span></div>`;
+
+  const fold = document.createElement('div');
+  fold.className = 'fold';
+  fold.innerHTML = `<div class="ht"><span class="cv" style="font-size:${fs}px">${newVal}</span></div>`;
+
+  card.querySelector('.fc-lower .cv').textContent = newVal;
+  card.appendChild(flap);
+  card.appendChild(fold);
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    flap.classList.add('go');
+    fold.classList.add('go');
+  }));
+
+  setTimeout(() => {
+    card.querySelector('.fc-upper .cv').textContent = newVal;
+    flap.remove();
+    fold.remove();
+  }, 700);
+}
+
+// Boot — show yesterday then flip to today (intro effect)
+const now  = new Date();
+const p    = dateParts(now);
+const prev = new Date(now);
+prev.setDate(prev.getDate() - 1);
+const pp = dateParts(prev);
+
+setCard('day',   pp.day);
+setCard('date',  pp.date);
+setCard('month', pp.month);
+
+setTimeout(() => flip('day',   p.day,   46), 400);
+setTimeout(() => flip('date',  p.date,  68), 650);
+setTimeout(() => flip('month', p.month, 46), 900);
+
+// Update at midnight
+function scheduleNext() {
+  const n  = new Date();
+  const ms = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1) - n;
+  setTimeout(() => {
+    const t  = new Date();
+    const tp = dateParts(t);
+    flip('day',   tp.day,   46);
+    flip('date',  tp.date,  68);
+    flip('month', tp.month, 46);
+    scheduleNext();
+  }, ms);
+}
+scheduleNext();
+</script>
+</body>
+</html>
